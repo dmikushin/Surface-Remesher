@@ -22,8 +22,6 @@
 
 #include <stdio.h>
 #include <unordered_map>
-#include <cuda_runtime.h>
-#include <device_functions.h>
 #include <helper_timer.h>
 #include <vector>
 #include <algorithm>

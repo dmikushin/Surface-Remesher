@@ -31,6 +31,8 @@ bool internal_is_sharp(
 	const Mesh& mesh,
 	FT cos_angle
 ){
+    namespace PMP = CGAL::Polygon_mesh_processing;
+
 	auto f1 = face(he, mesh);
 	auto f2 = face(opposite(he, mesh), mesh);
 

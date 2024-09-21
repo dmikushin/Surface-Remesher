@@ -97,7 +97,7 @@ inline void cuPrintMemory( const char* inStr )
     size_t total;
     CudaSafeCall( cudaMemGetInfo( &free, &total ) );
 
-    printf( "[%s] Memory used: %d MB\n", inStr, ( total - free ) / MegaByte );
+    printf( "[%s] Memory used: %zu MB\n", inStr, ( total - free ) / MegaByte );
 
     return;
 }

@@ -96,6 +96,8 @@ void recover(
 	typedef typename boost::graph_traits<Mesh2D>::vertex_descriptor			vertex_descriptor;
 	typedef typename boost::graph_traits<Mesh2D>::halfedge_descriptor		halfedge_descriptor;
 	typedef typename boost::graph_traits<Mesh2D>::face_descriptor			face_descriptor;
+    typedef Kernel::Point_2                 Point_2;
+    typedef Kernel::Point_3                 Point_3;
 
 	std::pair<face_descriptor, tuple> f_loc;
 	std::unordered_map<int, vertex_descriptor> vid;

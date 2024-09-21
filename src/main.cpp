@@ -60,7 +60,6 @@
 #include "gDel2D/gDel2D/PerfTimer.h"
 #include "gDel2D/gDel2D/CPU/PredWrapper.h"
 #include "gDel2D/DelaunayChecker.h"
-#include "delaunay.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -73,14 +72,6 @@
 #endif
 
 typedef CGAL::Simple_cartesian<double>	Kernel;
-
-#include "split.h"
-#include "weighting.h"
-#include "triangulation.h"
-#include "discretization.h"
-#include "constrains.h"
-#include "gcvt.h"
-#include "recover.h"
 
 typedef Kernel::Point_2					Point_2;
 typedef Kernel::Point_3					Point_3;
@@ -122,6 +113,15 @@ namespace PMP = CGAL::Polygon_mesh_processing;
 namespace SMP = CGAL::Surface_mesh_parameterization;
 
 typedef PMP::Face_location<SurfMesh, Kernel::FT>				Face_Location;
+
+#include "delaunay.h"
+#include "split.h"
+#include "weighting.h"
+#include "triangulation.h"
+#include "discretization.h"
+#include "constrains.h"
+#include "gcvt.h"
+#include "recover.h"
 
 int imageSize	= 2048;
 int depth		= 1;
@@ -167,17 +167,23 @@ int main(int argc, char** argv)
 
 	SeamMesh seam_mesh(surface, seam_edges, seam_vertices);
 
-	// the property map stores the 2D points in the uv parameter space
-	UV_uhm uv_uhm;
-	UV_pmap uv_coord(uv_uhm);
+    // The 2D points of the uv parametrisation will be written into this map
+    // Note that this is a halfedge property map, and that uv values
+    // are only stored for the canonical halfedges representing a vertex
+    UV_uhm uv_uhm;
+    UV_pmap uv_coord(uv_uhm);
 
-	// a halfedge on the border
-	halfedge_descriptor border_halfedge = PMP::longest_border(seam_mesh).first;
+    // A halfedge on the (possibly virtual) border
+    halfedge_descriptor border_halfedge = PMP::longest_border(seam_mesh).first;
 
 	// planar parameterization
 	//typedef SMP::Square_border_uniform_parameterizer_3<SeamMesh> Border_parameterizer;
-	typedef SMP::ARAP_parameterizer_3<SeamMesh> Parameterizer;
-	SMP::parameterize(seam_mesh, Parameterizer(), border_halfedge, uv_coord);
+	//SMP::ARAP_parameterizer_3<SurfMesh> parameterizer;
+    SMP::Error_code err = SMP::parameterize(seam_mesh, border_halfedge, uv_coord);
+	if(err != SMP::OK) {
+        std::cerr << "Error: " << SMP::get_error_message(err) << std::endl;
+        return EXIT_FAILURE;
+    }
 	printf("Parameterization done. %f s\n", clock()*1.0 / CLOCKS_PER_SEC);
 #ifdef OUTPUT_PARAMETERIZATION
 	std::ofstream out("parameterization.off");

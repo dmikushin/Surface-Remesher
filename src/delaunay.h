@@ -40,7 +40,7 @@ void delaunayInput(
 	double l,
 	double b
 ){
-	typedef boost::graph_traits<SurfMesh>::vertex_descriptor		vertex;
+	typedef typename boost::graph_traits<SurfMesh>::vertex_descriptor		vertex;
 
 	Point2 pt;
 

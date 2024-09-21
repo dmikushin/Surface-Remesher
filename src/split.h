@@ -32,7 +32,7 @@ void addSeams(
 	SeamVec& seam_vec,
 	SeamFile& seamfile
 ){
-	typedef boost::graph_traits<SurfMesh>::vertex_descriptor		vertex_descriptor;
+	typedef typename boost::graph_traits<SurfMesh>::vertex_descriptor		vertex_descriptor;
 
 	std::ifstream in(seamfile);
 	std::vector<vertex_descriptor> vertexVec;

@@ -53,6 +53,7 @@ void build_2d_triangulation(
 
 	// add vertices
 	for (vertex_3d vd3 : vertices) {
+        typedef Kernel::Point_2					Point_2;
 		Point_2 tmp = get(uvmap, vd3);
 		vertex_2d vd2 = mesh_2d.add_vertex(Point_2(tmp.x(), tmp.y()));
 		put(vertex_3d_to_2d, vd3, vd2);

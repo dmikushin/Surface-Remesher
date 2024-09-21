@@ -53,6 +53,8 @@ void visual_points(short *Voronoi, int n)
 }
 #endif
 
+namespace {
+
 // Random Point Generator
 // Random number generator, obtained from http://oldmill.uchicago.edu/~wilder/Code/random/
 unsigned long z, w, jsr, jcong; // Seeds
@@ -103,6 +105,8 @@ void randomPoints(
 	}
 }
 
+}
+
 void putConstrains(
 	short *Voronoi,
 	bool *mask,
@@ -149,7 +153,7 @@ void generateMask(
 	real l,
 	real b
 ){
-	memset(mask, 0, sizeof(mask));
+	memset(mask, 0, sizeof(mask[0]) * imageSize * imageSize);
 	for (auto v : points) {
 		auto p = mesh.point(v);
 		int x = int((p.x() - l) / scale);

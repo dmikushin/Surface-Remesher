@@ -79,7 +79,7 @@ void discretization(
 	typedef typename boost::graph_traits<Mesh>::vertex_descriptor	vertex_2d;
 	typedef typename boost::graph_traits<Mesh>::halfedge_descriptor	halfedge_2d;
 	typedef typename boost::graph_traits<Mesh>::face_descriptor		face_2d;
-
+    typedef Kernel::Point_2                 Point_2;
 
 	double *points = (double *)malloc(2 * mesh.number_of_vertices() * sizeof(double));
 	double *weight = (double *)malloc(mesh.number_of_vertices() * sizeof(double));
