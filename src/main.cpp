@@ -20,40 +20,44 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
+#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_tree.h>
+#include <CGAL/circulator.h>
+#include <CGAL/disable_warnings.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/Unique_hash_map.h>
+
+#include <CGAL/boost/graph/Seam_mesh.h>
+#include <CGAL/boost/graph/iterator.h>
+
+#include <CGAL/Surface_mesh_parameterization/parameterize.h>
 #include <CGAL/Surface_mesh_parameterization/Discrete_conformal_map_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/Discrete_authalic_parameterizer_3.h>
+#include <CGAL/Surface_mesh_parameterization/IO/File_off.h>
 #include <CGAL/Surface_mesh_parameterization/Square_border_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/Two_vertices_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/internal/Containers_filler.h>
 #include <CGAL/Surface_mesh_parameterization/ARAP_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/LSCM_parameterizer_3.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
-#include <CGAL/Surface_mesh_parameterization/parameterize.h>
-#include <CGAL/Surface_mesh_parameterization/IO/File_off.h>
-#include <CGAL/Polygon_mesh_processing/detect_features.h>
-#include <CGAL/Polygon_mesh_processing/smooth_mesh.h>
-#include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Polygon_mesh_processing/measure.h>
 #include <CGAL/Polygon_mesh_processing/locate.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
+#include <CGAL/Polygon_mesh_processing/detect_features.h>
+#include <CGAL/Polygon_mesh_processing/smooth_mesh.h>
+
 #include <boost/property_map/property_map.hpp>
 #include <boost/function_output_iterator.hpp>
-#include <CGAL/boost/graph/Seam_mesh.h>
-#include <CGAL/boost/graph/iterator.h>
-#include <CGAL/disable_warnings.h>
-#include <CGAL/Simple_cartesian.h>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
-#include <CGAL/Unique_hash_map.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/AABB_traits.h>
-#include <CGAL/circulator.h>
-#include <CGAL/AABB_tree.h>
-#include <iostream>
-#include <fstream>
+
 #include <cstddef>
+#include <fstream>
+#include <iostream>
 #include <vector>
 
 #include "gDel2D/gDel2D/GpuDelaunay.h"
