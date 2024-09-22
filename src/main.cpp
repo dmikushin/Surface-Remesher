@@ -69,11 +69,6 @@
 #include <Windows.h>
 #endif
 
-// #define VISUALIZE_TRIANGULATION
-#ifdef VISUALIZE_TRIANGULATION
-#include "gDel2D/Visualizer.h"
-#endif
-
 typedef CGAL::Simple_cartesian<double> Kernel;
 
 typedef Kernel::Point_2 Point_2;
@@ -237,14 +232,6 @@ int main(int argc, char **argv) {
          clock() * 1.0 / CLOCKS_PER_SEC);
 
   // construct constraint Delaunay triangulation
-#ifdef VISUALIZE_TRIANGULATION
-  Visualizer *vis = Visualizer::instance();
-  if (vis->isEnable()) {
-    vis->init(argc, argv, "gDel2D");
-    vis->printHelp();
-  }
-  Visualizer::instance()->pause();
-#endif
   GpuDel gpuDel;
   Point2HVec().swap(DelInput.pointVec);
   SegmentHVec().swap(DelInput.constraintVec);
@@ -281,14 +268,6 @@ int main(int argc, char **argv) {
   free(densityMap);
   free(Voronoi);
   free(constrainMask);
-
-#ifdef VISUALIZE_TRIANGULATION
-  // Visualize the constraint Delaunay triangualtion
-  Visualizer::instance()->resume();
-  Visualizer::instance()->addFrame(DelInput.pointVec, DelInput.constraintVec,
-                                   DelOutput.triVec);
-  vis->run();
-#endif
 
   return EXIT_SUCCESS;
 }

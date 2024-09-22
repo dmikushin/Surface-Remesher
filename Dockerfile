@@ -11,14 +11,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     libeigen3-dev \
     libgmp-dev \
     libmpfr-dev \
-    libopencv-dev \
-    mesa-common-dev \
-    libglu1-mesa-dev \
-    freeglut3-dev \
-    libglew-dev \
-    libglfw3-dev \
-    libxrandr-dev \
-    libxi-dev \
     wget
 
 # Clean up
