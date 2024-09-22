@@ -21,6 +21,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     libxi-dev \
     wget
 
+# Clean up
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # Download and install CGAL
 RUN wget https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-5.0.2/CGAL-5.0.2.tar.xz \
     && tar -xf CGAL-5.0.2.tar.xz \
@@ -28,9 +31,6 @@ RUN wget https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-5.0.2/CG
     && cmake . \
     && make \
     && make install
-
-# Clean up
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Copy the current directory contents into the container at /app
 COPY . /app
@@ -43,6 +43,6 @@ ENV PATH=$PATH:/usr/local/cuda/bin
 # Run CMake to build the project
 RUN mkdir build \
     && cd build \
-    && cmake .. -DCMAKE_CXX_COMPILER=clang++-15 -DCMAKE_COLOR_DIAGNOSTICS=ON -G Ninja \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=86 -G Ninja \
     && ninja
 
