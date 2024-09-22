@@ -69,7 +69,6 @@
 #include <Windows.h>
 #endif
 
-// #define OUTPUT_PARAMETERIZATION
 // #define VISUALIZE_TRIANGULATION
 #ifdef VISUALIZE_TRIANGULATION
 #include "gDel2D/Visualizer.h"
@@ -142,7 +141,11 @@ GDel2DOutput DelOutput;
 
 int main(int argc, char **argv) {
   // input surface mesh
-  const char *filename = argc > 1 ? argv[1] : "data/horse.off";
+  if (argc != 2) {
+	 printf("Usage: %s <off_file>\n", argv[0]);
+	 return 0;
+  }
+  const char *filename = argv[1];
   std::ifstream input(filename);
   SurfMesh surface;
   if (!input || !(input >> surface) || surface.is_empty()) {
@@ -159,7 +162,7 @@ int main(int argc, char **argv) {
   PMP::split_long_edges(constrain_vec, edge_length_limit, surface);
 
   // create seam mesh
-  const char *seamfile = "data/horse.selection.txt";
+  const std::string seamfile = std::string(argv[1]) + ".selection.txt";
   Seam_edge_uhm seam_edge_uhm(false);
   Seam_edge_pmap seam_edges(seam_edge_uhm);
   Seam_vertex_uhm seam_vertex_uhm(false);
@@ -190,10 +193,8 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   printf("Parameterization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
-#ifdef OUTPUT_PARAMETERIZATION
-  std::ofstream out("parameterization.off");
+  std::ofstream out(std::string(argv[1]) + ".parameterization.off");
   SMP::IO::output_uvmap_to_off(seam_mesh, border_halfedge, uv_coord, out);
-#endif
 
   // create 2d triangulation
   Mesh2D mesh_2d;
@@ -274,7 +275,7 @@ int main(int argc, char **argv) {
          edge_sum / resultMesh.number_of_halfedges());
 
   // Output to off file
-  std::ofstream ostream("result.off");
+  std::ofstream ostream(std::string(argv[1]) + ".result.off");
   ostream << resultMesh;
 
   free(densityMap);
