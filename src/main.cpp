@@ -122,34 +122,19 @@ typedef PMP::Face_location<SurfMesh, Kernel::FT> Face_Location;
 #include "triangulation.h"
 #include "weighting.h"
 
-int imageSize = 2048;
-int depth = 1;
-int maxIter = 1000;
-int vertices = 20000;
-double scale, leftbound, lowerbound;
-float *densityMap;
-short *Voronoi;
-bool *constrainMask;
-
-GDel2DInput DelInput;
-GDel2DOutput DelOutput;
-
-int main(int argc, char **argv) {
-  // input surface mesh
-  if (argc != 2) {
-	 printf("Usage: %s <off_file>\n", argv[0]);
-	 return 0;
-  }
-  const char *filename = argv[1];
-  std::ifstream input(filename);
+static int surfremesh(
+  const std::string& inputMeshFname, const std::string& outputMeshFname,
+  const std::string& seamsFname, const std::string& parameterizationFname,
+  double edge_length_limit, int imageSize = 2048, int depth = 1,
+  int maxIter = 1000, int vertices = 20000) {
   SurfMesh surface;
-  if (!input || !(input >> surface) || surface.is_empty()) {
-    std::cerr << "Not a valid .off file." << std::endl;
-    return EXIT_FAILURE;
+  {
+    std::ifstream input(inputMeshFname);
+    if (!input || !(input >> surface) || surface.is_empty()) {
+      std::cerr << "Not a valid .off file." << std::endl;
+      return EXIT_FAILURE;
+    }
   }
-  input.close();
-
-  double edge_length_limit = 0.72;
 
   // split long edges
   std::vector<SM_edge_descriptor> constrain_vec;
@@ -157,13 +142,12 @@ int main(int argc, char **argv) {
   PMP::split_long_edges(constrain_vec, edge_length_limit, surface);
 
   // create seam mesh
-  const std::string seamfile = std::string(argv[1]) + ".selection.txt";
   Seam_edge_uhm seam_edge_uhm(false);
   Seam_edge_pmap seam_edges(seam_edge_uhm);
   Seam_vertex_uhm seam_vertex_uhm(false);
   Seam_vertex_pmap seam_vertices(seam_vertex_uhm);
   std::vector<SM_edge_descriptor> seam_vec;
-  addSeams(surface, seam_edges, seam_vec, seamfile);
+  addSeams(surface, seam_edges, seam_vec, seamsFname);
   PMP::split_long_edges(seam_vec, edge_length_limit, surface,
                         PMP::parameters::edge_is_constrained_map(seam_edges));
   getSeamVertices(surface, seam_edges, seam_vertices);
@@ -188,7 +172,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   printf("Parameterization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
-  std::ofstream out(std::string(argv[1]) + ".parameterization.off");
+  std::ofstream out(parameterizationFname);
   SMP::IO::output_uvmap_to_off(seam_mesh, border_halfedge, uv_coord, out);
 
   // create 2d triangulation
@@ -209,7 +193,8 @@ int main(int argc, char **argv) {
   printf("Weighting done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
   // discretization
-  densityMap = (float *)malloc(imageSize * imageSize * sizeof(float));
+  double scale, leftbound, lowerbound;
+  float* densityMap = (float *)malloc(imageSize * imageSize * sizeof(float));
   discretization(mesh_2d, vertex_weight, densityMap, imageSize, scale,
                  leftbound, lowerbound);
   printf("Discretization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
@@ -222,8 +207,8 @@ int main(int argc, char **argv) {
   printf("Detect constrains done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
   // construct centroidal Voronoi diagram
-  Voronoi = (short *)malloc(sizeof(short) * imageSize * imageSize * 2);
-  constrainMask = (bool *)malloc(sizeof(bool) * imageSize * imageSize);
+  short* Voronoi = (short *)malloc(sizeof(short) * imageSize * imageSize * 2);
+  bool* constrainMask = (bool *)malloc(sizeof(bool) * imageSize * imageSize);
   generateMask(mesh_2d, constrain_point, constrainMask, imageSize, scale,
                leftbound, lowerbound);
   centroidalVoronoi(Voronoi, densityMap, constrainMask, vertices, imageSize,
@@ -232,6 +217,8 @@ int main(int argc, char **argv) {
          clock() * 1.0 / CLOCKS_PER_SEC);
 
   // construct constraint Delaunay triangulation
+  GDel2DInput DelInput;
+  GDel2DOutput DelOutput;
   GpuDel gpuDel;
   Point2HVec().swap(DelInput.pointVec);
   SegmentHVec().swap(DelInput.constraintVec);
@@ -262,12 +249,28 @@ int main(int argc, char **argv) {
          edge_sum / resultMesh.number_of_halfedges());
 
   // Output to off file
-  std::ofstream ostream(std::string(argv[1]) + ".result.off");
+  std::ofstream ostream(outputMeshFname);
   ostream << resultMesh;
 
   free(densityMap);
   free(Voronoi);
   free(constrainMask);
-
+  
   return EXIT_SUCCESS;
 }
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+	 printf("Usage: %s <surface_mesh.off>\n", argv[0]);
+	 return 0;
+  }
+  double edge_length_limit = 0.72;
+
+  const std::string inputMeshFname = argv[1];
+  const std::string outputMeshFname = inputMeshFname + ".result.off";
+  const std::string seamsFname = inputMeshFname + ".selection.txt";
+  const std::string parameterizationFname = inputMeshFname + ".parameterization.off";
+
+  return surfremesh(inputMeshFname, outputMeshFname, seamsFname, parameterizationFname, edge_length_limit);
+}
+
