@@ -1,6 +1,14 @@
-# Surface remesher
+# Surface Remesher
 
 Surface Remesher remeshes a surface mesh using the centroidal Voronoi tessellation. The input is a triangulated surface mesh. We first cut the surface into a topological disk, then parameterize it in a planar space. We compute the centroidal Voronoi tessellation (CVT) in the parameter space with respect to a density distribution, and construct the constrained Delaunay triangulation (CDT) from the resulted CVT. The final optimized surface mesh is then obtained from the CDT.
+
+For the following images demonstrate the input image and the corresponding result of Sufrace Remesher:
+
+<img src="examples/horse.off_screenshot.jpg" width="300"><img src="examples/horse.off.result.off_screenshot.jpg" width="300">
+
+<img src="examples/pig.off_screenshot.jpg" width="300"><img src="examples/pig.off.result.off_screenshot.jpg" width="300">
+
+<img src="examples/nefertiti.off_screenshot.jpg" width="300"><img src="examples/nefertiti.off.result.off_screenshot.jpg" width="300">
 
 
 ## Building
