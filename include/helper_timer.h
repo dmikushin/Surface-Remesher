@@ -42,11 +42,11 @@
 // Definition of the StopWatch Interface, this is used if we don't want to use
 // the CUT functions But rather in a self contained class interface
 class StopWatchInterface {
- public:
+public:
   StopWatchInterface() {}
   virtual ~StopWatchInterface() {}
 
- public:
+public:
   //! Start time measurement
   virtual void start() = 0;
 
@@ -78,17 +78,11 @@ class StopWatchInterface {
 
 //! Windows specific implementation of StopWatch
 class StopWatchWin : public StopWatchInterface {
- public:
+public:
   //! Constructor, default
   StopWatchWin()
-      : start_time(),
-        end_time(),
-        diff_time(0.0f),
-        total_time(0.0f),
-        running(false),
-        clock_sessions(0),
-        freq(0),
-        freq_set(false) {
+      : start_time(), end_time(), diff_time(0.0f), total_time(0.0f),
+        running(false), clock_sessions(0), freq(0), freq_set(false) {
     if (!freq_set) {
       // helper variable
       LARGE_INTEGER temp;
@@ -107,7 +101,7 @@ class StopWatchWin : public StopWatchInterface {
   // Destructor
   ~StopWatchWin() {}
 
- public:
+public:
   //! Start time measurement
   inline void start();
 
@@ -126,7 +120,7 @@ class StopWatchWin : public StopWatchInterface {
   //! _stopped_ (ie finished sessions) and the current total time
   inline float getAverageTime();
 
- private:
+private:
   // member variables
 
   //! Start of measurement
@@ -224,24 +218,21 @@ inline float StopWatchWin::getAverageTime() {
 #else
 // Declarations for Stopwatch on Linux and Mac OSX
 // includes, system
-#include <sys/time.h>
 #include <ctime>
+#include <sys/time.h>
 
 //! Windows specific implementation of StopWatch
 class StopWatchLinux : public StopWatchInterface {
- public:
+public:
   //! Constructor, default
   StopWatchLinux()
-      : start_time(),
-        diff_time(0.0),
-        total_time(0.0),
-        running(false),
+      : start_time(), diff_time(0.0), total_time(0.0), running(false),
         clock_sessions(0) {}
 
   // Destructor
   virtual ~StopWatchLinux() {}
 
- public:
+public:
   //! Start time measurement
   inline void start();
 
@@ -260,13 +251,13 @@ class StopWatchLinux : public StopWatchInterface {
   //! _stopped_ (ie finished sessions) and the current total time
   inline float getAverageTime();
 
- private:
+private:
   // helper functions
 
   //! Get difference between start time and current time
   inline float getDiffTime();
 
- private:
+private:
   // member variables
 
   //! Start of measurement
@@ -356,7 +347,7 @@ inline float StopWatchLinux::getDiffTime() {
   return static_cast<float>(1000.0 * (t_time.tv_sec - start_time.tv_sec) +
                             (0.001 * (t_time.tv_usec - start_time.tv_usec)));
 }
-#endif  // WIN32
+#endif // WIN32
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Timer functionality exported
@@ -462,4 +453,4 @@ inline float sdkGetTimerValue(StopWatchInterface **timer_interface) {
   }
 }
 
-#endif  // COMMON_HELPER_TIMER_H_
+#endif // COMMON_HELPER_TIMER_H_

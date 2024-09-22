@@ -30,17 +30,16 @@
 #define COMMON_EXCEPTION_H_
 
 // includes, system
-#include <stdlib.h>
 #include <exception>
 #include <iostream>
 #include <stdexcept>
+#include <stdlib.h>
 #include <string>
 
 //! Exception wrapper.
 //! @param Std_Exception Exception out of namespace std for easy typing.
-template <class Std_Exception>
-class Exception : public Std_Exception {
- public:
+template <class Std_Exception> class Exception : public Std_Exception {
+public:
   //! @brief Static construction interface
   //! @return Alwayss throws ( Located_Exception<Exception>)
   //! @param file file in which the Exception occurs
@@ -60,7 +59,7 @@ class Exception : public Std_Exception {
   //! Destructor
   virtual ~Exception() throw();
 
- private:
+private:
   //! Constructor, default (private)
   Exception();
 
@@ -83,15 +82,15 @@ inline void handleException(const Exception_Typ &ex) {
 //! Convenience macros
 
 //! Exception caused by dynamic program behavior, e.g. file does not exist
-#define RUNTIME_EXCEPTION(msg) \
+#define RUNTIME_EXCEPTION(msg)                                                 \
   Exception<std::runtime_error>::throw_it(__FILE__, __LINE__, msg)
 
 //! Logic exception in program, e.g. an assert failed
-#define LOGIC_EXCEPTION(msg) \
+#define LOGIC_EXCEPTION(msg)                                                   \
   Exception<std::logic_error>::throw_it(__FILE__, __LINE__, msg)
 
 //! Out of range exception
-#define RANGE_EXCEPTION(msg) \
+#define RANGE_EXCEPTION(msg)                                                   \
   Exception<std::range_error>::throw_it(__FILE__, __LINE__, msg)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,9 +142,8 @@ Exception<Std_Exception>::Exception(const std::string &s) : Std_Exception(s) {}
 ////////////////////////////////////////////////////////////////////////////////
 //! Destructor
 ////////////////////////////////////////////////////////////////////////////////
-template <class Std_Exception>
-Exception<Std_Exception>::~Exception() throw() {}
+template <class Std_Exception> Exception<Std_Exception>::~Exception() throw() {}
 
-  // functions, exported
+// functions, exported
 
-#endif  // COMMON_EXCEPTION_H_
+#endif // COMMON_EXCEPTION_H_
