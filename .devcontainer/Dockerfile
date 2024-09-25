@@ -11,6 +11,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     libeigen3-dev \
     libgmp-dev \
     libmpfr-dev \
+    nlohmann-json3-dev \
     wget
 
 # Clean up
