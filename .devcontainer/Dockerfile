@@ -26,3 +26,10 @@ RUN wget https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-5.0.2/CG
 
 ENV PATH=$PATH:/usr/local/cuda/bin
 
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    git \
+    vim \
+    fish
+
+# Clean up
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
