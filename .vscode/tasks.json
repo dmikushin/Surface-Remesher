@@ -2,48 +2,30 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "configure",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-DCMAKE_BUILD_TYPE=${input:buildType}",
-                "-S",
-                ".",
-                "-B",
-                "build"
+            "type": "cmake",
+            "label": "CMake: build",
+            "command": "build",
+            "targets": [
+                "all"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": ["$gcc"]
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "CMake build task"
         },
         {
-            "label": "build",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "build"
+            "type": "cmake",
+            "label": "CMake: clean rebuild",
+            "command": "cleanRebuild",
+            "targets": [
+                "all"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": ["$gcc"]
-        }
-    ],
-    "inputs": [
-        {
-            "id": "buildType",
-            "type": "pickString",
-            "description": "Select build type",
-            "options": [
-                "Debug",
-                "Release",
-                "RelWithDebInfo"
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
             ],
-            "default": "Release"
+            "detail": "CMake clean rebuild task"
         }
     ]
 }
