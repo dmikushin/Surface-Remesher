@@ -3,25 +3,26 @@
 #include "gDel2D/CPU/PredWrapper.h"
 #include "gDel2D/GpuDelaunay.h"
 
-class DelaunayChecker {
+class DelaunayChecker
+{
 private:
-  GDel2DInput &_input;
-  GDel2DOutput &_output;
+    GDel2DInput &_input;
+    GDel2DOutput &_output;
 
-  PredWrapper2D _predWrapper;
+    PredWrapper2D _predWrapper;
 
-  int getVertexCount();
-  int getSegmentCount();
-  int getTriangleCount();
+    int getVertexCount();
+    int getSegmentCount();
+    int getTriangleCount();
 
 public:
-  DelaunayChecker(GDel2DInput &input, GDel2DOutput &output);
+    DelaunayChecker(GDel2DInput &input, GDel2DOutput &output);
 
-  void checkEuler();
-  void checkAdjacency();
-  void checkOrientation();
-  void checkDelaunay();
-  void checkConstraints();
+    void checkEuler();
+    void checkAdjacency();
+    void checkOrientation();
+    void checkDelaunay();
+    void checkConstraints();
 };
 
 const int TriSegNum = 3;

@@ -50,7 +50,7 @@
 #include <CGAL/Polygon_mesh_processing/remesh.h>
 #include <CGAL/Polygon_mesh_processing/smooth_mesh.h>
 
-#include <boost/function_output_iterator.hpp>
+#include <boost/iterator/function_output_iterator.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
@@ -60,14 +60,12 @@
 #include <iostream>
 #include <vector>
 
+#define TOID(x, y, n) ((y) * (n) + (x))
+
 #include "gDel2D/DelaunayChecker.h"
 #include "gDel2D/gDel2D/CPU/PredWrapper.h"
 #include "gDel2D/gDel2D/GpuDelaunay.h"
 #include "gDel2D/gDel2D/PerfTimer.h"
-
-#if defined(_WIN32)
-#include <Windows.h>
-#endif
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 
@@ -77,8 +75,7 @@ typedef CGAL::Surface_mesh<Point_3> SurfMesh;
 typedef CGAL::Surface_mesh<Point_2> Mesh2D;
 
 typedef boost::graph_traits<SurfMesh>::edge_descriptor SM_edge_descriptor;
-typedef boost::graph_traits<SurfMesh>::halfedge_descriptor
-    SM_halfedge_descriptor;
+typedef boost::graph_traits<SurfMesh>::halfedge_descriptor SM_halfedge_descriptor;
 typedef boost::graph_traits<SurfMesh>::vertex_descriptor SM_vertex_descriptor;
 
 typedef boost::graph_traits<Mesh2D>::edge_descriptor edge_2d;
@@ -122,153 +119,159 @@ typedef PMP::Face_location<SurfMesh, Kernel::FT> Face_Location;
 #include "triangulation.h"
 #include "weighting.h"
 
-static int surfremesh(
-  const std::string& inputMeshFname, const std::string& outputMeshFname,
-  const std::string& seamsFname, const std::string& parameterizationFname,
-  double edge_length_limit, int imageSize = 2048, int depth = 1,
-  int maxIter = 1000, int vertices = 20000) {
-  SurfMesh surface;
-  {
-    std::ifstream input(inputMeshFname);
-    if (!input || !(input >> surface) || surface.is_empty()) {
-      std::cerr << "Not a valid .off file." << std::endl;
-      return EXIT_FAILURE;
+static int surfremesh(const std::string &inputMeshFname,
+                      const std::string &outputMeshFname,
+                      const std::string &seamsFname,
+                      const std::string &parameterizationFname,
+                      double edge_length_limit,
+                      int imageSize = 2048,
+                      int depth = 1,
+                      int maxIter = 1000,
+                      int vertices = 20000)
+{
+    SurfMesh surface;
+    {
+        std::ifstream input(inputMeshFname);
+        if (!input || !(input >> surface) || surface.is_empty())
+        {
+            std::cerr << "Not a valid .off file." << std::endl;
+            return EXIT_FAILURE;
+        }
     }
-  }
 
-  // split long edges
-  std::vector<SM_edge_descriptor> constrain_vec;
-  detectConstrains(surface, constrain_vec);
-  PMP::split_long_edges(constrain_vec, edge_length_limit, surface);
+    // split long edges
+    std::vector<SM_edge_descriptor> constrain_vec;
+    detectConstrains(surface, constrain_vec);
+    PMP::split_long_edges(constrain_vec, edge_length_limit, surface);
 
-  // create seam mesh
-  Seam_edge_uhm seam_edge_uhm(false);
-  Seam_edge_pmap seam_edges(seam_edge_uhm);
-  Seam_vertex_uhm seam_vertex_uhm(false);
-  Seam_vertex_pmap seam_vertices(seam_vertex_uhm);
-  std::vector<SM_edge_descriptor> seam_vec;
-  addSeams(surface, seam_edges, seam_vec, seamsFname);
-  PMP::split_long_edges(seam_vec, edge_length_limit, surface,
-                        PMP::parameters::edge_is_constrained_map(seam_edges));
-  getSeamVertices(surface, seam_edges, seam_vertices);
+    // create seam mesh
+    Seam_edge_uhm seam_edge_uhm(false);
+    Seam_edge_pmap seam_edges(seam_edge_uhm);
+    Seam_vertex_uhm seam_vertex_uhm(false);
+    Seam_vertex_pmap seam_vertices(seam_vertex_uhm);
+    std::vector<SM_edge_descriptor> seam_vec;
+    addSeams(surface, seam_edges, seam_vec, seamsFname);
+    PMP::split_long_edges(seam_vec, edge_length_limit, surface, PMP::parameters::edge_is_constrained_map(seam_edges));
+    getSeamVertices(surface, seam_edges, seam_vertices);
 
-  SeamMesh seam_mesh(surface, seam_edges, seam_vertices);
+    SeamMesh seam_mesh(surface, seam_edges, seam_vertices);
 
-  // The 2D points of the uv parametrisation will be written into this map
-  // Note that this is a halfedge property map, and that uv values
-  // are only stored for the canonical halfedges representing a vertex
-  UV_uhm uv_uhm;
-  UV_pmap uv_coord(uv_uhm);
+    // The 2D points of the uv parametrisation will be written into this map
+    // Note that this is a halfedge property map, and that uv values
+    // are only stored for the canonical halfedges representing a vertex
+    UV_uhm uv_uhm;
+    UV_pmap uv_coord(uv_uhm);
 
-  // A halfedge on the (possibly virtual) border
-  halfedge_descriptor border_halfedge = PMP::longest_border(seam_mesh).first;
+    // A halfedge on the (possibly virtual) border
+    halfedge_descriptor border_halfedge = PMP::longest_border(seam_mesh).first;
 
-  // planar parameterization
-  // typedef SMP::Square_border_uniform_parameterizer_3<SeamMesh>
-  // Border_parameterizer; SMP::ARAP_parameterizer_3<SurfMesh> parameterizer;
-  SMP::Error_code err = SMP::parameterize(seam_mesh, border_halfedge, uv_coord);
-  if (err != SMP::OK) {
-    std::cerr << "Error: " << SMP::get_error_message(err) << std::endl;
-    return EXIT_FAILURE;
-  }
-  printf("Parameterization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
-  std::ofstream out(parameterizationFname);
-  SMP::IO::output_uvmap_to_off(seam_mesh, border_halfedge, uv_coord, out);
+    // planar parameterization
+    // typedef SMP::Square_border_uniform_parameterizer_3<SeamMesh>
+    // Border_parameterizer; SMP::ARAP_parameterizer_3<SurfMesh> parameterizer;
+    SMP::Error_code err = SMP::parameterize(seam_mesh, border_halfedge, uv_coord);
+    if (err != SMP::OK)
+    {
+        std::cerr << "Error: " << SMP::get_error_message(err) << std::endl;
+        return EXIT_FAILURE;
+    }
+    printf("Parameterization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
+    std::ofstream out(parameterizationFname);
+    SMP::IO::output_uvmap_to_off(seam_mesh, border_halfedge, uv_coord, out);
 
-  // create 2d triangulation
-  Mesh2D mesh_2d;
-  _3d_to_2d_uhm _32_uhm;
-  _3d_to_2d_pmap vertex_3d_to_2d(_32_uhm);
-  _2d_to_3d_uhm _23_uhm;
-  _2d_to_3d_pmap vertex_2d_to_3d(_23_uhm);
-  build_2d_triangulation(seam_mesh, border_halfedge, uv_coord, mesh_2d,
-                         vertex_3d_to_2d, vertex_2d_to_3d);
-  printf("Triangulation done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
+    // create 2d triangulation
+    Mesh2D mesh_2d;
+    _3d_to_2d_uhm _32_uhm;
+    _3d_to_2d_pmap vertex_3d_to_2d(_32_uhm);
+    _2d_to_3d_uhm _23_uhm;
+    _2d_to_3d_pmap vertex_2d_to_3d(_23_uhm);
+    build_2d_triangulation(seam_mesh, border_halfedge, uv_coord, mesh_2d, vertex_3d_to_2d, vertex_2d_to_3d);
+    printf("Triangulation done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
-  // weighting vertices
-  weight_uhm wgt_uhm;
-  weight_pmap vertex_weight(wgt_uhm);
-  weighting_vertices_with_area(seam_mesh, mesh_2d, vertex_3d_to_2d,
-                               vertex_weight);
-  printf("Weighting done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
+    // weighting vertices
+    weight_uhm wgt_uhm;
+    weight_pmap vertex_weight(wgt_uhm);
+    weighting_vertices_with_area(seam_mesh, mesh_2d, vertex_3d_to_2d, vertex_weight);
+    printf("Weighting done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
-  // discretization
-  double scale, leftbound, lowerbound;
-  std::vector<float> densityMap(imageSize * imageSize);
-  discretization(mesh_2d, vertex_weight, densityMap.data(), imageSize, scale,
-                 leftbound, lowerbound);
-  printf("Discretization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
+    // discretization
+    double scale, leftbound, lowerbound;
+    std::vector<float> densityMap(imageSize * imageSize);
+    discretization(mesh_2d, vertex_weight, densityMap.data(), imageSize, scale, leftbound, lowerbound);
+    printf("Discretization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
-  // detect constrains
-  std::vector<std::pair<vertex_2d, vertex_2d>> constrain_edge;
-  std::unordered_set<vertex_2d> constrain_point;
-  detect_constrains(seam_mesh, vertex_3d_to_2d, constrain_edge,
-                    constrain_point);
-  printf("Detect constrains done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
+    // detect constrains
+    std::vector<std::pair<vertex_2d, vertex_2d>> constrain_edge;
+    std::unordered_set<vertex_2d> constrain_point;
+    detect_constrains(seam_mesh, vertex_3d_to_2d, constrain_edge, constrain_point);
+    printf("Detect constrains done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
-  // construct centroidal Voronoi diagram
-  std::vector<short> Voronoi(imageSize * imageSize * 2);
-  bool *constrainMask = new bool[imageSize * imageSize];
-  generateMask(mesh_2d, constrain_point, constrainMask, imageSize, scale,
-               leftbound, lowerbound);
-  centroidalVoronoi(Voronoi.data(), densityMap.data(), constrainMask, vertices, imageSize,
-                    depth, maxIter);
-  printf("Centroidal Voronoi tessellation done. %f s\n",
-         clock() * 1.0 / CLOCKS_PER_SEC);
+    // construct centroidal Voronoi diagram
+    std::vector<short> Voronoi(imageSize * imageSize * 2);
+    bool *constrainMask = new bool[imageSize * imageSize];
+    generateMask(mesh_2d, constrain_point, constrainMask, imageSize, scale, leftbound, lowerbound);
+    centroidalVoronoi(Voronoi.data(), densityMap.data(), constrainMask, vertices, imageSize, depth, maxIter);
+    printf("Centroidal Voronoi tessellation done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
-  // construct constraint Delaunay triangulation
-  GDel2DInput DelInput;
-  GDel2DOutput DelOutput;
-  GpuDel gpuDel;
-  Point2HVec().swap(DelInput.pointVec);
-  SegmentHVec().swap(DelInput.constraintVec);
-  TriHVec().swap(DelOutput.triVec);
-  TriOppHVec().swap(DelOutput.triOppVec);
-  delaunayInput(mesh_2d, Voronoi.data(), constrainMask, constrain_point,
-                constrain_edge, DelInput.pointVec, DelInput.constraintVec,
-                imageSize, scale, leftbound, lowerbound);
-  // printf("%d points, %d segments", DelInput.pointVec.size(),
-  // DelInput.constraintVec.size());
-  gpuDel.compute(DelInput, &DelOutput);
-  printf("Constraint Delaunay triangulation done. %f s\n",
-         clock() * 1.0 / CLOCKS_PER_SEC);
+    // construct constraint Delaunay triangulation
+    GDel2DInput DelInput;
+    GDel2DOutput DelOutput;
+    GpuDel gpuDel;
+    Point2HVec().swap(DelInput.pointVec);
+    SegmentHVec().swap(DelInput.constraintVec);
+    TriHVec().swap(DelOutput.triVec);
+    TriOppHVec().swap(DelOutput.triOppVec);
+    delaunayInput(mesh_2d,
+                  Voronoi.data(),
+                  constrainMask,
+                  constrain_point,
+                  constrain_edge,
+                  DelInput.pointVec,
+                  DelInput.constraintVec,
+                  imageSize,
+                  scale,
+                  leftbound,
+                  lowerbound);
+    // printf("%d points, %d segments", DelInput.pointVec.size(),
+    // DelInput.constraintVec.size());
+    gpuDel.compute(DelInput, &DelOutput);
+    printf("Constraint Delaunay triangulation done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
-  // Parameter space -> surface
-  SurfMesh resultMesh;
-  recover(mesh_2d, seam_mesh, vertex_2d_to_3d, DelInput.pointVec,
-          DelOutput.triVec, constrain_point, resultMesh);
-  printf("Recover done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
+    // Parameter space -> surface
+    SurfMesh resultMesh;
+    recover(mesh_2d, seam_mesh, vertex_2d_to_3d, DelInput.pointVec, DelOutput.triVec, constrain_point, resultMesh);
+    printf("Recover done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
-  // compute average edge length
-  double edge_sum = 0, edge_avg = 0;
-  for (auto e : resultMesh.edges()) {
-    edge_sum += PMP::edge_length(e, resultMesh);
-  }
-  edge_avg = edge_sum / resultMesh.number_of_edges();
-  printf("Average edge length: %f\n",
-         edge_sum / resultMesh.number_of_halfedges());
+    // compute average edge length
+    double edge_sum = 0, edge_avg = 0;
+    for (auto e : resultMesh.edges())
+    {
+        edge_sum += PMP::edge_length(e, resultMesh);
+    }
+    edge_avg = edge_sum / resultMesh.number_of_edges();
+    printf("Average edge length: %f\n", edge_sum / resultMesh.number_of_halfedges());
 
-  // Output to off file
-  std::ofstream ostream(outputMeshFname);
-  ostream << resultMesh;
+    // Output to off file
+    std::ofstream ostream(outputMeshFname);
+    ostream << resultMesh;
 
-  delete[] constrainMask;
+    delete[] constrainMask;
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
-int main(int argc, char **argv) {
-  if (argc != 2) {
-	 printf("Usage: %s <surface_mesh.off>\n", argv[0]);
-	 return 0;
-  }
-  double edge_length_limit = 0.72;
+int main(int argc, char **argv)
+{
+    if (argc != 2)
+    {
+        printf("Usage: %s <surface_mesh.off>\n", argv[0]);
+        return 0;
+    }
+    double edge_length_limit = 0.72;
 
-  const std::string inputMeshFname = argv[1];
-  const std::string outputMeshFname = inputMeshFname + ".result.off";
-  const std::string seamsFname = inputMeshFname + ".selection.txt";
-  const std::string parameterizationFname = inputMeshFname + ".parameterization.off";
+    const std::string inputMeshFname = argv[1];
+    const std::string outputMeshFname = inputMeshFname + ".result.off";
+    const std::string seamsFname = inputMeshFname + ".selection.txt";
+    const std::string parameterizationFname = inputMeshFname + ".parameterization.off";
 
-  return surfremesh(inputMeshFname, outputMeshFname, seamsFname, parameterizationFname, edge_length_limit);
+    return surfremesh(inputMeshFname, outputMeshFname, seamsFname, parameterizationFname, edge_length_limit);
 }
-

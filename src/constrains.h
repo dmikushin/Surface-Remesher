@@ -23,48 +23,50 @@
 #ifndef CONSTRAINS_H
 #define CONSTRAINS_H
 
-#define TOID(x, y, n) (y) * (n) + (x)
-
 template <typename HE, typename Mesh, typename FT>
-bool internal_is_sharp(const HE &he, const Mesh &mesh, FT cos_angle) {
-  namespace PMP = CGAL::Polygon_mesh_processing;
+bool internal_is_sharp(const HE &he, const Mesh &mesh, FT cos_angle)
+{
+    namespace PMP = CGAL::Polygon_mesh_processing;
 
-  auto f1 = face(he, mesh);
-  auto f2 = face(opposite(he, mesh), mesh);
+    auto f1 = face(he, mesh);
+    auto f2 = face(opposite(he, mesh), mesh);
 
-  const typename Kernel::Vector_3 &n1 = PMP::compute_face_normal(f1, mesh);
-  const typename Kernel::Vector_3 &n2 = PMP::compute_face_normal(f2, mesh);
+    const typename Kernel::Vector_3 &n1 = PMP::compute_face_normal(f1, mesh);
+    const typename Kernel::Vector_3 &n2 = PMP::compute_face_normal(f2, mesh);
 
-  if (n1 * n2 <= cos_angle)
-    return true;
-  else
-    return false;
+    if (n1 * n2 <= cos_angle)
+        return true;
+    else
+        return false;
 }
 
 template <typename Edge, typename Mesh, typename FT>
-bool is_sharp(const Edge &e, const Mesh &mesh, FT angle_in_deg) {
-  FT cos_angle(std::cos(CGAL::to_double(angle_in_deg) * CGAL_PI / 180.));
-  auto he = halfedge(e, mesh);
-  if (is_border_edge(he, mesh) || angle_in_deg == FT() ||
-      (angle_in_deg != FT(180) && internal_is_sharp(he, mesh, cos_angle)))
-    return true;
-  else
-    return false;
+bool is_sharp(const Edge &e, const Mesh &mesh, FT angle_in_deg)
+{
+    FT cos_angle(std::cos(CGAL::to_double(angle_in_deg) * CGAL_PI / 180.));
+    auto he = halfedge(e, mesh);
+    if (is_border_edge(he, mesh) || angle_in_deg == FT() ||
+        (angle_in_deg != FT(180) && internal_is_sharp(he, mesh, cos_angle)))
+        return true;
+    else
+        return false;
 }
 
 template <typename Mesh, typename Map, typename Earr, typename Varr>
-void detect_constrains(const Mesh &mesh, const Map &map, Earr &c_edge,
-                       Varr &c_point) {
-  for (auto e : mesh.edges()) {
-    if (is_border(e, mesh) /*|| is_sharp(e, mesh, 60.0)*/) {
-      auto he = halfedge(e, mesh);
-      auto s = source(he, mesh);
-      auto t = target(he, mesh);
-      c_edge.push_back({map[s], map[t]});
-      c_point.insert(map[s]);
-      c_point.insert(map[t]);
+void detect_constrains(const Mesh &mesh, const Map &map, Earr &c_edge, Varr &c_point)
+{
+    for (auto e : mesh.edges())
+    {
+        if (is_border(e, mesh) /*|| is_sharp(e, mesh, 60.0)*/)
+        {
+            auto he = halfedge(e, mesh);
+            auto s = source(he, mesh);
+            auto t = target(he, mesh);
+            c_edge.push_back({map[s], map[t]});
+            c_point.insert(map[s]);
+            c_point.insert(map[t]);
+        }
     }
-  }
 }
 
 #endif

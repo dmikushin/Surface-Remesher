@@ -26,55 +26,61 @@
 #include "constrains.h"
 
 template <typename Mesh, typename SeamEdge, typename SeamVec, typename SeamFile>
-void addSeams(const Mesh &surface, SeamEdge &seam_edges, SeamVec &seam_vec,
-              SeamFile &seamfile) {
-  typedef typename boost::graph_traits<SurfMesh>::vertex_descriptor
-      vertex_descriptor;
+void addSeams(const Mesh &surface, SeamEdge &seam_edges, SeamVec &seam_vec, SeamFile &seamfile)
+{
+    typedef typename boost::graph_traits<SurfMesh>::vertex_descriptor vertex_descriptor;
 
-  std::ifstream in(seamfile);
-  std::vector<vertex_descriptor> vertexVec;
+    std::ifstream in(seamfile);
+    std::vector<vertex_descriptor> vertexVec;
 
-  for (auto v : surface.vertices())
-    vertexVec.push_back(v);
+    for (auto v : surface.vertices())
+        vertexVec.push_back(v);
 
-  int s, t;
-  while (in >> s >> t) {
-    auto v1 = vertexVec[s];
-    auto v2 = vertexVec[t];
-    auto tmed = CGAL::edge(v1, v2, surface);
-    if (!tmed.second)
-      continue;
-    if (!CGAL::is_border(tmed.first, surface)) {
-      if (get(seam_edges, tmed.first) == true)
-        continue;
-      put(seam_edges, tmed.first, true);
-      seam_vec.push_back(tmed.first);
+    int s, t;
+    while (in >> s >> t)
+    {
+        auto v1 = vertexVec[s];
+        auto v2 = vertexVec[t];
+        auto tmed = CGAL::edge(v1, v2, surface);
+        if (!tmed.second)
+            continue;
+        if (!CGAL::is_border(tmed.first, surface))
+        {
+            if (get(seam_edges, tmed.first) == true)
+                continue;
+            put(seam_edges, tmed.first, true);
+            seam_vec.push_back(tmed.first);
+        }
     }
-  }
 
-  vertexVec.clear();
-  in.close();
+    vertexVec.clear();
+    in.close();
 }
 
 template <typename Mesh, typename SeamEdge, typename SeamVertex>
-void getSeamVertices(const Mesh &surface, const SeamEdge &seam_edges,
-                     SeamVertex &seam_vertices) {
-  for (auto e : surface.edges()) {
-    if (seam_edges[e] == true) {
-      auto h = halfedge(e, surface);
-      seam_vertices[source(h, surface)] = true;
-      seam_vertices[target(h, surface)] = true;
+void getSeamVertices(const Mesh &surface, const SeamEdge &seam_edges, SeamVertex &seam_vertices)
+{
+    for (auto e : surface.edges())
+    {
+        if (seam_edges[e] == true)
+        {
+            auto h = halfedge(e, surface);
+            seam_vertices[source(h, surface)] = true;
+            seam_vertices[target(h, surface)] = true;
+        }
     }
-  }
 }
 
 template <typename Mesh, typename cVec>
-void detectConstrains(const Mesh &surface, cVec &vec) {
-  for (auto e : surface.edges()) {
-    if (is_border(e, surface) /* || is_sharp(e, surface, 60.0)*/) {
-      vec.push_back(e);
+void detectConstrains(const Mesh &surface, cVec &vec)
+{
+    for (auto e : surface.edges())
+    {
+        if (is_border(e, surface) /* || is_sharp(e, surface, 60.0)*/)
+        {
+            vec.push_back(e);
+        }
     }
-  }
 }
 
 #endif

@@ -23,53 +23,59 @@
 #ifndef DELAUNAY_H
 #define DELAUNAY_H
 
-// delaunayInput(mesh_2d, Voronoi, constrainMask, constrain_point,
-// constrain_edge, DelInput.pointVec, DelInput.constraintVec, scale, leftbound,
-// lowerbound);
-#define TOID(x, y, n) ((y) * (n) + (x))
+template <typename Mesh, typename Varr, typename Earr, typename delPoint, typename delSeg>
+void delaunayInput(const Mesh &mesh,
+                   short *Voronoi,
+                   bool *mask,
+                   const Varr &c_point,
+                   const Earr &c_edge,
+                   delPoint &inPoint,
+                   delSeg &inSeg,
+                   int imageSize,
+                   double scale,
+                   double l,
+                   double b)
+{
+    typedef typename boost::graph_traits<SurfMesh>::vertex_descriptor vertex;
 
-template <typename Mesh, typename Varr, typename Earr, typename delPoint,
-          typename delSeg>
-void delaunayInput(const Mesh &mesh, short *Voronoi, bool *mask,
-                   const Varr &c_point, const Earr &c_edge, delPoint &inPoint,
-                   delSeg &inSeg, int imageSize, double scale, double l,
-                   double b) {
-  typedef typename boost::graph_traits<SurfMesh>::vertex_descriptor vertex;
+    Point2 pt;
 
-  Point2 pt;
-
-  // printf("%f %f\n\n", l, b);
-  for (int i = 0; i < imageSize; ++i) {
-    for (int j = 0; j < imageSize; ++j) {
-      if (!mask[TOID(i, j, imageSize)] &&
-          Voronoi[TOID(i, j, imageSize) * 2] == i &&
-          Voronoi[TOID(i, j, imageSize) * 2 + 1] == j) {
-        pt._p[0] = i * scale + l;
-        pt._p[1] = j * scale + b;
-        inPoint.push_back(pt);
-      }
+    // printf("%f %f\n\n", l, b);
+    for (int i = 0; i < imageSize; ++i)
+    {
+        for (int j = 0; j < imageSize; ++j)
+        {
+            if (!mask[TOID(i, j, imageSize)] && Voronoi[TOID(i, j, imageSize) * 2] == i &&
+                Voronoi[TOID(i, j, imageSize) * 2 + 1] == j)
+            {
+                pt._p[0] = i * scale + l;
+                pt._p[1] = j * scale + b;
+                inPoint.push_back(pt);
+            }
+        }
     }
-  }
 
-  std::unordered_map<vertex, int> vid;
+    std::unordered_map<vertex, int> vid;
 
-  for (auto v : c_point) {
-    auto p = mesh.point(v);
-    pt._p[0] = p.x();
-    pt._p[1] = p.y();
-    inPoint.push_back(pt);
-    vid[v] = inPoint.size() - 1;
-  }
+    for (auto v : c_point)
+    {
+        auto p = mesh.point(v);
+        pt._p[0] = p.x();
+        pt._p[1] = p.y();
+        inPoint.push_back(pt);
+        vid[v] = inPoint.size() - 1;
+    }
 
-  Segment seg;
+    Segment seg;
 
-  for (auto e : c_edge) {
-    seg._v[0] = vid[e.first];
-    seg._v[1] = vid[e.second];
-    inSeg.push_back(seg);
-  }
+    for (auto e : c_edge)
+    {
+        seg._v[0] = vid[e.first];
+        seg._v[1] = vid[e.second];
+        inSeg.push_back(seg);
+    }
 
-  vid.clear();
+    vid.clear();
 }
 
 #endif

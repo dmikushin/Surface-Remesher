@@ -50,37 +50,47 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define NOMINMAX
 #include <windows.h>
 
-struct PerfTimer {
-  float _freq;
-  LARGE_INTEGER _startTime;
-  LARGE_INTEGER _stopTime;
-  long long _leftover;
-  long long _value;
+struct PerfTimer
+{
+    float _freq;
+    LARGE_INTEGER _startTime;
+    LARGE_INTEGER _stopTime;
+    long long _leftover;
+    long long _value;
 
-  PerfTimer() {
-    LARGE_INTEGER freq;
-    QueryPerformanceFrequency(&freq);
-    _freq = 1.0f / freq.QuadPart;
+    PerfTimer()
+    {
+        LARGE_INTEGER freq;
+        QueryPerformanceFrequency(&freq);
+        _freq = 1.0f / freq.QuadPart;
 
-    _leftover = 0;
-  }
+        _leftover = 0;
+    }
 
-  void start() { QueryPerformanceCounter(&_startTime); }
+    void start()
+    {
+        QueryPerformanceCounter(&_startTime);
+    }
 
-  void stop() {
-    QueryPerformanceCounter(&_stopTime);
+    void stop()
+    {
+        QueryPerformanceCounter(&_stopTime);
 
-    _value = _leftover + (_stopTime.QuadPart - _startTime.QuadPart);
-    _leftover = 0;
-  }
+        _value = _leftover + (_stopTime.QuadPart - _startTime.QuadPart);
+        _leftover = 0;
+    }
 
-  void pause() {
-    QueryPerformanceCounter(&_stopTime);
+    void pause()
+    {
+        QueryPerformanceCounter(&_stopTime);
 
-    _leftover += (_stopTime.QuadPart - _startTime.QuadPart);
-  }
+        _leftover += (_stopTime.QuadPart - _startTime.QuadPart);
+    }
 
-  double value() const { return _value * _freq * 1000; }
+    double value() const
+    {
+        return _value * _freq * 1000;
+    }
 };
 
 #else
@@ -90,63 +100,82 @@ struct PerfTimer {
 const long long NANO_PER_SEC = 1000000000LL;
 const long long MICRO_TO_NANO = 1000LL;
 
-struct PerfTimer {
-  long long _startTime;
-  long long _stopTime;
-  long long _leftover;
-  long long _value;
+struct PerfTimer
+{
+    long long _startTime;
+    long long _stopTime;
+    long long _leftover;
+    long long _value;
 
-  PerfTimer() {
-    _leftover = 0;
-    _value = 0;
-  }
-
-  long long _getTime() {
-    struct timeval tv;
-    long long ntime;
-
-    if (0 == gettimeofday(&tv, NULL)) {
-      ntime = NANO_PER_SEC;
-      ntime *= tv.tv_sec;
-      ntime += tv.tv_usec * MICRO_TO_NANO;
+    PerfTimer()
+    {
+        _leftover = 0;
+        _value = 0;
     }
 
-    return ntime;
-  }
+    long long _getTime()
+    {
+        struct timeval tv;
+        long long ntime;
 
-  void start() { _startTime = _getTime(); }
+        if (0 == gettimeofday(&tv, NULL))
+        {
+            ntime = NANO_PER_SEC;
+            ntime *= tv.tv_sec;
+            ntime += tv.tv_usec * MICRO_TO_NANO;
+        }
 
-  void stop() {
-    _stopTime = _getTime();
-    _value = _leftover + _stopTime - _startTime;
-    _leftover = 0;
-  }
+        return ntime;
+    }
 
-  void pause() {
-    _stopTime = _getTime();
-    _leftover += _stopTime - _startTime;
-  }
+    void start()
+    {
+        _startTime = _getTime();
+    }
 
-  double value() const { return ((double)_value) / NANO_PER_SEC * 1000; }
+    void stop()
+    {
+        _stopTime = _getTime();
+        _value = _leftover + _stopTime - _startTime;
+        _leftover = 0;
+    }
+
+    void pause()
+    {
+        _stopTime = _getTime();
+        _leftover += _stopTime - _startTime;
+    }
+
+    double value() const
+    {
+        return ((double)_value) / NANO_PER_SEC * 1000;
+    }
 };
 #endif
 
-class CudaTimer : public PerfTimer {
+class CudaTimer : public PerfTimer
+{
 public:
-  void start() {
-    CudaSafeCall(cudaDeviceSynchronize());
-    PerfTimer::start();
-  }
+    void start()
+    {
+        CudaSafeCall(cudaDeviceSynchronize());
+        PerfTimer::start();
+    }
 
-  void stop() {
-    CudaSafeCall(cudaDeviceSynchronize());
-    PerfTimer::stop();
-  }
+    void stop()
+    {
+        CudaSafeCall(cudaDeviceSynchronize());
+        PerfTimer::stop();
+    }
 
-  void pause() {
-    CudaSafeCall(cudaDeviceSynchronize());
-    PerfTimer::pause();
-  }
+    void pause()
+    {
+        CudaSafeCall(cudaDeviceSynchronize());
+        PerfTimer::pause();
+    }
 
-  double value() { return PerfTimer::value(); }
+    double value()
+    {
+        return PerfTimer::value();
+    }
 };
