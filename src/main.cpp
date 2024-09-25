@@ -194,8 +194,8 @@ static int surfremesh(
 
   // discretization
   double scale, leftbound, lowerbound;
-  float* densityMap = (float *)malloc(imageSize * imageSize * sizeof(float));
-  discretization(mesh_2d, vertex_weight, densityMap, imageSize, scale,
+  std::vector<float> densityMap(imageSize * imageSize);
+  discretization(mesh_2d, vertex_weight, densityMap.data(), imageSize, scale,
                  leftbound, lowerbound);
   printf("Discretization done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
@@ -207,11 +207,11 @@ static int surfremesh(
   printf("Detect constrains done. %f s\n", clock() * 1.0 / CLOCKS_PER_SEC);
 
   // construct centroidal Voronoi diagram
-  short* Voronoi = (short *)malloc(sizeof(short) * imageSize * imageSize * 2);
-  bool* constrainMask = (bool *)malloc(sizeof(bool) * imageSize * imageSize);
+  std::vector<short> Voronoi(imageSize * imageSize * 2);
+  bool *constrainMask = new bool[imageSize * imageSize];
   generateMask(mesh_2d, constrain_point, constrainMask, imageSize, scale,
                leftbound, lowerbound);
-  centroidalVoronoi(Voronoi, densityMap, constrainMask, vertices, imageSize,
+  centroidalVoronoi(Voronoi.data(), densityMap.data(), constrainMask, vertices, imageSize,
                     depth, maxIter);
   printf("Centroidal Voronoi tessellation done. %f s\n",
          clock() * 1.0 / CLOCKS_PER_SEC);
@@ -224,7 +224,7 @@ static int surfremesh(
   SegmentHVec().swap(DelInput.constraintVec);
   TriHVec().swap(DelOutput.triVec);
   TriOppHVec().swap(DelOutput.triOppVec);
-  delaunayInput(mesh_2d, Voronoi, constrainMask, constrain_point,
+  delaunayInput(mesh_2d, Voronoi.data(), constrainMask, constrain_point,
                 constrain_edge, DelInput.pointVec, DelInput.constraintVec,
                 imageSize, scale, leftbound, lowerbound);
   // printf("%d points, %d segments", DelInput.pointVec.size(),
@@ -252,10 +252,8 @@ static int surfremesh(
   std::ofstream ostream(outputMeshFname);
   ostream << resultMesh;
 
-  free(densityMap);
-  free(Voronoi);
-  free(constrainMask);
-  
+  delete[] constrainMask;
+
   return EXIT_SUCCESS;
 }
 
