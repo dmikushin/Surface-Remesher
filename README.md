@@ -56,6 +56,19 @@ The input file can be either a `.off` file representing a triangulated surface m
 The resulting mesh will be written to a file with the original name with `.result.off` suffix appended.
 
 
+## Visualization
+
+The resuting `.result.off` files could be rendered separately in any program supporting this format.
+
+As a simple solution, we provide a script to render PNG images with pymeshlab and polyscope in Python:
+
+```
+cd examples
+./render.py horse.off.result.off
+```
+
+Upon the first rendering, polyscope dialog will be opened to choose the optional scene view. All subsequent renderings will re-use this cached scene view (unless its JSON file is deleted or `--choose-scene` option is added).
+
 ## References
 
 1. [Jiaqi Zheng and Tiow-Seng Tan. 2020. Computing Centroidal Voronoi Tessellation Using the GPU. In Symposium on Interactive 3D Graphics and Games (I3D ’20), May 5–7, 2020, San Francisco, CA, USA.](https://doi.org/10.1145/3384382.3384520)
